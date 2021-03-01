@@ -6,7 +6,115 @@
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.34/browser.min.js"></script>
   <script type="text/babel">
+ const handleResponse = (xhr, obj) => {
+      const content = document.querySelector("#content");
+      console.log(xhr.status);
+      switch(xhr.status) {
+        case 200:
+          content.innerHTML = `<b>Success</b>`;
+          break;
+        case 201:
+          content.innerHTML = `<b>Create</b>`;
+          break;
+        case 204:
+          content.innerHTML = `<b>Updated (No Content)</b>`;
+          return;
+        case 304:
+          content.innerHTML = `<b>Not Modified</b>`;
+          break;
+        case 400:
+          content.innerHTML = `<b>Bad Request</b>`;
+          break;
+        case 404:
+          content.innerHTML = `<b>Resource Not Found</b>`;
+          break;
+        default:
+          content.innerHTML = `Error code not implemented by client.`;
+          break;
+      }
+      if (obj) {
+        const obj = JSON.parse(xhr.response);
+        console.dir(obj);
+          
+        // display message
+        if (obj.message) {
+          const para = document.createElement('p');
+          para.innerHTML = `Message: ${obj.message}`;
+          content.appendChild(para);
+        }
+          
+        // display users
+        if (obj.users) {
+          const para = document.createElement('p');
+          para.innerHTML = JSON.stringify(obj.users);
+          content.appendChild(para);
+        }
+      }
+    };
+    
 
+    const sendPOST = (e, form) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open(form.getAttribute('method'), form.getAttribute('action'));
+      xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+      xhr.setRequestHeader ('Accept', 'application/json');
+        
+      const formName = form.querySelector('#nameField').value;
+      const formAge = form.querySelector('#ageField').value;
+      
+      xhr.onload = () => handleResponse(xhr, true);
+      const data = `name=${formName}&age=${formAge}`;
+        
+
+      xhr.send(data);
+      //prevent the browser's default action 
+      e.preventDefault();
+      // prevents the browser from trying to change page
+      return false;
+    };
+
+    //Send request function for getUsers
+    const requestUsers = (e, form) => {
+      const xhr = new XMLHttpRequest();
+      const url = userForm.querySelector('#urlField').value;
+      const method = userForm.querySelector('#methodSelect').value;
+        
+      xhr.open(method, url);
+      xhr.setRequestHeader('Accept', 'application/json');
+        
+      // parsing an obj
+      if (method == 'get') {
+        xhr.onload = () => handleResponse(xhr, true);
+      } 
+      
+      // HEAD response only
+      else {
+          xhr.onload = () => handleResponse(xhr, false);
+      }
+        
+      xhr.send();
+      // prevent the browser's default action 
+      e.preventDefault();
+      // prevents the browser from trying to change page
+      return false;
+    };
+
+    const init = () => {  
+      // grabs form elements
+      const nameForm = document.querySelector('#nameForm');
+      const userForm = document.querySelector('#userForm');
+      
+      // add functions for submit
+      const addUser = (e) => sendPOST(e, nameForm);
+      const getUsers = (e) => requestUsers(e, userForm);
+        
+      // Set DOM listeners
+      nameForm.addEventListener('submit', addUser);
+      userForm.addEventListener('submit', getUsers);
+    };
+
+
+    window.onload = init;
   </script>
 </head>
 <body>
@@ -28,7 +136,7 @@
         <option value="get">GET</option>
         <option value="head">HEAD</option>
       </select>
-      <input type="submit" value="Get User" />
+      <input type="submit" value="Send" />
     </form>
   </section>
   <section id="content">
